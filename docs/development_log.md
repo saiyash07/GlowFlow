@@ -41,3 +41,4 @@ Log entry #40: refactor: streamline exception handling in client requests
 Log entry #41: docs: include memory usage details in performance specs
 Log entry #42: feat: print server initialization messages with timestamp
 Log entry #43: style: clean up terminal output formatting
+Log entry #44: fix: ensure cleanup handler executes on SIGTERM
