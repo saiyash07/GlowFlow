@@ -1,0 +1,179 @@
+#!/usr/bin/env ruby
+# glowflow - macOS keyboard breathing daemon & web panel
+
+require 'socket'
+require 'json'
+require 'thread'
+
+PORT = 4567
+$state = {
+  status: "OFF",
+  battery: "AC Power",
+  paused: false,
+  original_brightness: 0.5
+}
+
+# Fetch initial brightness
+begin
+  val = `./keyboard_controller get`.strip.to_f
+  $state[:original_brightness] = val if val > 0.0
+rescue
+end
+
+$lock = Mutex.new
+
+def check_battery
+  status = `pmset -g batt` rescue ""
+  if status.include?("Battery Power")
+    "Battery Power"
+  else
+    "AC Power"
+  end
+end
+
+# Update battery status in a background loop
+Thread.new do
+  loop do
+    batt = check_battery
+    $lock.synchronize do
+      $state[:battery] = batt
+      if batt == "Battery Power" && $state[:status] == "ON"
+        $state[:paused] = true
+      elsif batt == "AC Power" && $state[:status] == "ON"
+        $state[:paused] = false
+      end
+    end
+    sleep 5
+  end
+end
+
+# Animation thread
+Thread.new do
+  t = 0.0
+  period = 3.0 # seconds for one full breathing cycle
+  fps = 20.0   # smooth but very low CPU overhead
+  sleep_time = 1.0 / fps
+
+  loop do
+    status, paused = nil, nil
+    $lock.synchronize do
+      status = $state[:status]
+      paused = $state[:paused]
+    end
+
+    if status == "ON" && !paused
+      # Smooth breathing curve (sine wave)
+      brightness = (Math.sin(t * Math::PI * 2 / period) + 1.0) / 2.0
+      brightness = brightness.round(4)
+      system("./keyboard_controller set #{brightness} >/dev/null 2>&1")
+      t += sleep_time
+      if t >= period
+        t -= period
+      end
+      sleep sleep_time
+    elsif status == "ON" && paused
+      # Paused (on battery) to save power. Restore normal brightness.
+      system("./keyboard_controller set #{$state[:original_brightness]} >/dev/null 2>&1")
+      sleep 2.0
+    else
+      # OFF. Keep it at original brightness.
+      sleep 0.5
+    end
+  end
+end
+
+# Simple HTTP Server
+begin
+  server = TCPServer.new('127.0.0.1', PORT)
+rescue Errno::EADDRINUSE
+  puts "Port #{PORT} is already in use. Is another instance of GlowFlow running?"
+  exit 1
+end
+
+puts "GlowFlow Dashboard running at http://127.0.0.1:#{PORT}"
+
+# Open browser automatically in a separate thread
+Thread.new do
+  sleep 0.5
+  system("open http://127.0.0.1:#{PORT}")
+end
+
+# Graceful exit handler
+Signal.trap("INT") do
+  puts "\nShutting down GlowFlow..."
+  system("./keyboard_controller set #{$state[:original_brightness]} >/dev/null 2>&1")
+  exit
+end
+
+loop do
+  Thread.start(server.accept) do |client|
+    begin
+      request_line = client.gets
+      next unless request_line
+
+      method, path, _ = request_line.split(" ")
+      
+      # Consume remaining headers
+      while (line = client.gets) && line.strip != ""
+      end
+
+      if method == "GET" && path == "/"
+        content = File.read("public/index.html")
+        client.print "HTTP/1.1 200 OK\r\n"
+        client.print "Content-Type: text/html\r\n"
+        client.print "Content-Length: #{content.bytesize}\r\n"
+        client.print "Connection: close\r\n"
+        client.print "\r\n"
+        client.print content
+      elsif method == "GET" && path == "/api/status"
+        response_data = nil
+        $lock.synchronize do
+          response_data = {
+            status: $state[:status],
+            battery: $state[:battery],
+            paused: $state[:paused]
+          }
+        end
+        content = response_data.to_json
+        client.print "HTTP/1.1 200 OK\r\n"
+        client.print "Content-Type: application/json\r\n"
+        client.print "Content-Length: #{content.bytesize}\r\n"
+        client.print "Connection: close\r\n"
+        client.print "\r\n"
+        client.print content
+      elsif method == "POST" && path == "/api/toggle"
+        new_status = nil
+        $lock.synchronize do
+          if $state[:status] == "OFF"
+            $state[:status] = "ON"
+            # Get current brightness before starting breathing to restore it later
+            val = `./keyboard_controller get`.strip.to_f
+            $state[:original_brightness] = val if val > 0.0
+            $state[:paused] = ($state[:battery] == "Battery Power")
+          else
+            $state[:status] = "OFF"
+            # Restore original brightness
+            system("./keyboard_controller set #{$state[:original_brightness]} >/dev/null 2>&1")
+          end
+          new_status = $state[:status]
+        end
+        content = { success: true, status: new_status }.to_json
+        client.print "HTTP/1.1 200 OK\r\n"
+        client.print "Content-Type: application/json\r\n"
+        client.print "Content-Length: #{content.bytesize}\r\n"
+        client.print "Connection: close\r\n"
+        client.print "\r\n"
+        client.print content
+      else
+        client.print "HTTP/1.1 404 Not Found\r\n"
+        client.print "Content-Length: 0\r\n"
+        client.print "Connection: close\r\n"
+        client.print "\r\n"
+      end
+    rescue => e
+      STDERR.puts "Error handling client request: #{e.message}"
+    ensure
+      client.close rescue nil
+    end
+  end
+end
