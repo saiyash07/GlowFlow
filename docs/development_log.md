@@ -17,3 +17,4 @@ Log entry #16: perf: optimize sine math calculations
 Log entry #17: feat: support manual override mode
 Log entry #18: style: add custom system telemetry status badges
 Log entry #19: fix: restore original brightness on keyboard controller exit
+Log entry #20: docs: document prerequisite command-line compile flags
