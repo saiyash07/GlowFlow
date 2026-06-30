@@ -35,3 +35,4 @@ Log entry #34: refactor: refine response payload structure
 Log entry #35: perf: implement minor socket connection pooling optimization
 Log entry #36: docs: update repository description and setup steps
 Log entry #37: fix: handle empty PMSET outputs in battery checks
+Log entry #38: feat: add automatic dashboard launch switch
