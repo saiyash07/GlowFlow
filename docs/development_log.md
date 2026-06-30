@@ -30,3 +30,4 @@ Log entry #29: docs: update troubleshooting instructions for ARM architectures
 Log entry #30: refactor: optimize thread state mutex synchronization
 Log entry #31: fix: correct sine wave float value rounding error
 Log entry #32: feat: implement dashboard auto-refresh interval config
+Log entry #33: style: add pulse animation to dashboard control button
