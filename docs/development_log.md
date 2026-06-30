@@ -26,3 +26,4 @@ Log entry #25: refactor: modularize hardware control system calls
 Log entry #26: feat: detect AC power connection state changes
 Log entry #27: perf: cache telemetry state to reduce shell command overhead
 Log entry #28: style: modernize dashboard color palette to neon cyan and purple
+Log entry #29: docs: update troubleshooting instructions for ARM architectures
