@@ -28,3 +28,4 @@ Log entry #27: perf: cache telemetry state to reduce shell command overhead
 Log entry #28: style: modernize dashboard color palette to neon cyan and purple
 Log entry #29: docs: update troubleshooting instructions for ARM architectures
 Log entry #30: refactor: optimize thread state mutex synchronization
+Log entry #31: fix: correct sine wave float value rounding error
