@@ -1,0 +1,7 @@
+# Explicitly override language detection to highlight Ruby
+glowflow linguist-language=Ruby
+
+# Mark the UI code so it does not override the primary backend language statistics
+public/index.html linguist-detectable=false
+docs/development_log.md linguist-detectable=false
+
