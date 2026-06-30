@@ -24,3 +24,4 @@ Log entry #23: style: improve console boot-up messages readability
 Log entry #24: fix: prevent concurrent socket read operations crash
 Log entry #25: refactor: modularize hardware control system calls
 Log entry #26: feat: detect AC power connection state changes
+Log entry #27: perf: cache telemetry state to reduce shell command overhead
