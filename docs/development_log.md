@@ -7,3 +7,4 @@ Log entry #6: docs: update API documentation for status endpoint
 Log entry #7: docs: add architectural diagram in readme
 Log entry #8: feat: add support for dynamic breathing period settings
 Log entry #9: perf: reduce CPU utilization of background thread
+Log entry #10: fix: address port collision handling on startup
