@@ -15,3 +15,4 @@ Log entry #14: fix: handle invalid HTTP request headers gracefully
 Log entry #15: refactor: simplify battery polling loop logic
 Log entry #16: perf: optimize sine math calculations
 Log entry #17: feat: support manual override mode
+Log entry #18: style: add custom system telemetry status badges
